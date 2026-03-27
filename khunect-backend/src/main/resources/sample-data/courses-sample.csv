@@ -1,0 +1,11 @@
+courseCode,courseName,professorName,departmentName,scheduleText,classroom,semesterYear,semesterTerm,sourceType
+ART101,도자성형1,김도예,예술디자인대학,월 09:00-11:45,미술관 201,2026,FIRST,SEEDED
+ART204,도자문화이야기,박현자,예술디자인대학,수 13:30-16:15,미술관 104,2026,FIRST,SEEDED
+GEC110,세계와 시민,정민우,후마니타스칼리지,화 10:30-12:00,청운관 302,2026,FIRST,SEEDED
+SOC220,현대사회와 데이터,이서현,사회과학대학,목 13:30-15:00,정경대 401,2026,FIRST,SEEDED
+CSE201,자료구조,최준혁,컴퓨터공학과,"월 13:30-15:00, 수 13:30-15:00",전자정보대 502,2026,FIRST,SEEDED
+CSE310,웹서비스백엔드,한지원,컴퓨터공학과,"화 15:00-16:30, 목 15:00-16:30",전자정보대 412,2026,FIRST,SEEDED
+BUS115,창업과 비즈니스모델,윤태경,경영대학,금 09:00-11:45,오비스홀 210,2026,FIRST,SEEDED
+ENG130,Academic English,Sophia Lee,국제교육원,월 10:30-12:00,외국어대 208,2026,FIRST,SEEDED
+HIS240,동아시아문명사,조한성,문과대학,"화 09:00-10:30, 금 10:30-12:00",문과대 115,2026,FIRST,SEEDED
+BIO150,생명과학의 이해,강유진,이과대학,"수 09:00-10:30, 금 13:30-15:00",이과대 321,2026,FIRST,SEEDED

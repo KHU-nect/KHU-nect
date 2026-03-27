@@ -1,0 +1,68 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: khunect-backend
+  profiles:
+    default: local
+  jackson:
+    time-zone: Asia/Seoul
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+logging:
+  level:
+    com.khunect.backend: debug
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui
+
+app:
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+  auth:
+    allowed-email-domain: ${ALLOWED_EMAIL_DOMAIN:khu.ac.kr}
+    auth-code-expiration-seconds: ${AUTH_CODE_EXPIRATION_SECONDS:300}
+  cors:
+    allowed-origins:
+      - ${FRONTEND_BASE_URL:http://localhost:3000}
+      - http://localhost:5173
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    exposed-headers:
+      - Authorization
+    allow-credentials: true
+    max-age: 3600
+  jwt:
+    secret: ${JWT_SECRET:change-me-to-a-secure-key-with-at-least-32-characters}
+    issuer: ${JWT_ISSUER:khunect-backend}
+    access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}
+    refresh-token-expiration-seconds: ${JWT_REFRESH_TOKEN_EXPIRATION_SECONDS:1209600}
+  course-import:
+    khu:
+      enabled: ${KHU_COURSE_CRAWLER_ENABLED:false}
+      base-url: ${KHU_COURSE_BASE_URL:}
+      search-path: ${KHU_COURSE_SEARCH_PATH:/}
+      keyword-param-name: ${KHU_COURSE_KEYWORD_PARAM_NAME:keyword}
+      year-param-name: ${KHU_COURSE_YEAR_PARAM_NAME:year}
+      term-param-name: ${KHU_COURSE_TERM_PARAM_NAME:term}
+      row-selector: ${KHU_COURSE_ROW_SELECTOR:table.course-search tbody tr}
+      course-code-selector: ${KHU_COURSE_CODE_SELECTOR:td.course-code}
+      course-name-selector: ${KHU_COURSE_NAME_SELECTOR:td.course-name}
+      professor-name-selector: ${KHU_COURSE_PROFESSOR_SELECTOR:td.professor-name}
+      department-name-selector: ${KHU_COURSE_DEPARTMENT_SELECTOR:td.department-name}
+      schedule-text-selector: ${KHU_COURSE_SCHEDULE_SELECTOR:td.schedule-text}
+      classroom-selector: ${KHU_COURSE_CLASSROOM_SELECTOR:td.classroom}
