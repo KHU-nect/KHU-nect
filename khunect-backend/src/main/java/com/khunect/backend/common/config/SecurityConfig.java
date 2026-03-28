@@ -1,9 +1,13 @@
 package com.khunect.backend.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.khunect.backend.auth.oauth2.CustomOAuth2UserService;
+import com.khunect.backend.auth.oauth2.OAuth2AuthenticationFailureHandler;
+import com.khunect.backend.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.khunect.backend.common.exception.ErrorCode;
 import com.khunect.backend.common.response.ApiResponse;
 import com.khunect.backend.common.response.ErrorResponse;
+import com.khunect.backend.common.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -15,6 +19,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {
@@ -22,7 +27,11 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(
 		HttpSecurity http,
-		ObjectMapper objectMapper
+		ObjectMapper objectMapper,
+		JwtAuthenticationFilter jwtAuthenticationFilter,
+		CustomOAuth2UserService customOAuth2UserService,
+		OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
+		OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler
 	) throws Exception {
 		http
 			.csrf(AbstractHttpConfigurer::disable)
@@ -34,16 +43,25 @@ public class SecurityConfig {
 				.requestMatchers(
 					"/error",
 					"/h2-console/**",
+					"/oauth2/**",
+					"/login/**",
 					"/ws-stomp",
 					"/ws-stomp/**",
 					"/swagger-ui/**",
 					"/swagger-ui.html",
+					"/v3/api-docs/**",
 					"/api-docs/**",
-					"/api/auth/**",
+					"/api/auth/exchange",
+					"/api/auth/refresh",
 					"/api/courses/**"
 				).permitAll()
 				.requestMatchers("/api/**").authenticated()
 				.anyRequest().permitAll()
+			)
+			.oauth2Login(oauth2 -> oauth2
+				.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+				.successHandler(oAuth2AuthenticationSuccessHandler)
+				.failureHandler(oAuth2AuthenticationFailureHandler)
 			)
 			.exceptionHandling(exception -> exception
 				.authenticationEntryPoint((request, response, authException) ->
@@ -53,7 +71,8 @@ public class SecurityConfig {
 					writeErrorResponse(response, objectMapper, ErrorCode.FORBIDDEN)
 				)
 			)
-			.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
+			.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()))
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}

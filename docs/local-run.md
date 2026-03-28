@@ -20,10 +20,21 @@
 ## 환경 변수
 - `.env.example` 참고
 - 최소한 다음 값을 확인:
-  - `FRONTEND_BASE_URL`
-  - `JWT_SECRET`
   - `GOOGLE_CLIENT_ID`
   - `GOOGLE_CLIENT_SECRET`
+  - `GOOGLE_REDIRECT_URI`
+  - `FRONTEND_BASE_URL`
+  - `AUTH_CALLBACK_PATH`
+
+## Google OAuth2 로컬 설정
+- Google Cloud Console의 OAuth redirect URI에 아래 값을 등록해야 한다.
+  - `http://localhost:8080/login/oauth2/code/google`
+- 로컬 기본 callback 조합:
+  - backend redirect URI: `GOOGLE_REDIRECT_URI`
+  - frontend callback: `FRONTEND_BASE_URL` + `AUTH_CALLBACK_PATH`
+- 로그인 시작 URL:
+  - `http://localhost:8080/oauth2/authorization/google`
+- 로그인 성공 후 백엔드는 프론트로 `?code=`를 붙여 리다이렉트하고, 프론트는 `/api/auth/exchange`를 호출해야 한다.
 
 ## local demo data
 - 샘플 유저 3명 이상

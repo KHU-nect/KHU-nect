@@ -1,5 +1,6 @@
 package com.khunect.backend.common.config;
 
+import com.khunect.backend.auth.config.AuthProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,7 +9,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-@EnableConfigurationProperties({CorsProperties.class, JwtProperties.class})
+@EnableConfigurationProperties({CorsProperties.class, JwtProperties.class, AuthProperties.class})
 public class CorsConfig {
 
 	@Bean

@@ -5,7 +5,9 @@
 - OpenAPI JSON: `/api-docs`
 
 ## 인증 흐름
-- 현재 코드베이스는 HTTP 테스트에서 `MockMvc user()`를 사용하지만, 최종 구조는 Google OAuth2 -> 1회용 auth code -> JWT 발급 흐름을 기준으로 설계되어 있다.
+- 인증은 Google OAuth2 -> 1회용 auth code -> `POST /api/auth/exchange` -> access/refresh token 발급 흐름으로 동작한다.
+- `POST /api/auth/refresh`는 refresh token rotation을 적용한다.
+- 보호된 REST API는 `Authorization: Bearer <accessToken>` 헤더가 필요하다.
 - STOMP WebSocket은 `CONNECT` 시 `Authorization: Bearer <token>` 헤더로 JWT를 검증한다.
 
 ## 주요 REST Endpoint

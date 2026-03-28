@@ -51,8 +51,7 @@ public class CourseChatStompChannelInterceptor implements ChannelInterceptor {
 			if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
 				throw new CustomException(ErrorCode.UNAUTHORIZED);
 			}
-			String subject = jwtTokenProvider.getSubject(authorizationHeader.substring(7));
-			Principal principal = UsernamePasswordAuthenticationToken.authenticated(subject, null, null);
+			Principal principal = (Principal) jwtTokenProvider.getAuthentication(authorizationHeader.substring(7));
 			accessor.setUser(principal);
 			return message;
 		}

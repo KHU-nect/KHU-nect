@@ -25,6 +25,9 @@ public class User extends BaseTimeEntity {
 	@Column(nullable = false, unique = true, length = 100)
 	private String email;
 
+	@Column(unique = true, length = 100)
+	private String googleSub;
+
 	@Column(length = 20)
 	private String nickname;
 
@@ -49,8 +52,9 @@ public class User extends BaseTimeEntity {
 	@Column(nullable = false)
 	private int helpedCount;
 
-	private User(String email) {
+	private User(String email, String googleSub) {
 		this.email = email;
+		this.googleSub = googleSub;
 		this.signupCompleted = false;
 		this.point = 0;
 		this.level = 1;
@@ -59,7 +63,11 @@ public class User extends BaseTimeEntity {
 	}
 
 	public static User create(String email) {
-		return new User(email);
+		return new User(email, null);
+	}
+
+	public static User createOAuthUser(String email, String googleSub) {
+		return new User(email, googleSub);
 	}
 
 	public void completeSignup(String nickname, String major, String studentNumber) {
@@ -75,6 +83,10 @@ public class User extends BaseTimeEntity {
 	public void updateProfile(String nickname, String major) {
 		this.nickname = nickname;
 		this.major = major;
+	}
+
+	public void updateGoogleSub(String googleSub) {
+		this.googleSub = googleSub;
 	}
 
 	public boolean hasStudentNumber(String studentNumber) {
