@@ -16,6 +16,8 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
 	boolean existsBySourceType(CourseSourceType sourceType);
 
+	long countBySourceType(CourseSourceType sourceType);
+
 	@Query("""
 		select c
 		from Course c

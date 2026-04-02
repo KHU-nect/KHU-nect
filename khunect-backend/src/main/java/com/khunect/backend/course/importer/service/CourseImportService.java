@@ -32,9 +32,7 @@ public class CourseImportService {
 			}
 
 			SemesterTerm semesterTerm = SemesterTerm.valueOf(row.semesterTerm().trim().toUpperCase());
-			CourseSourceType sourceType = row.sourceType() == null || row.sourceType().isBlank()
-				? defaultSourceType
-				: CourseSourceType.valueOf(row.sourceType().trim().toUpperCase());
+			CourseSourceType sourceType = defaultSourceType;
 
 			Course existing = courseRepository.findByCourseCode(row.courseCode().trim()).orElse(null);
 			if (existing == null) {

@@ -39,7 +39,7 @@ public class CourseDataLoader implements ApplicationRunner {
 	@Override
 	@Transactional
 	public void run(ApplicationArguments args) throws Exception {
-		if (courseRepository.existsBySourceType(CourseSourceType.SEEDED)) {
+		if (courseRepository.countBySourceType(CourseSourceType.SEEDED) >= 2000) {
 			log.info("[CourseDataLoader] SEEDED 데이터가 이미 존재합니다. 임포트를 건너뜁니다.");
 			return;
 		}
