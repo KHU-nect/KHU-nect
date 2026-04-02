@@ -11,7 +11,9 @@ import com.khunect.backend.course.repository.CourseRepository;
 import java.io.InputStream;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -39,8 +41,8 @@ public class CourseDataLoader implements ApplicationRunner {
 	@Override
 	@Transactional
 	public void run(ApplicationArguments args) throws Exception {
-		if (courseRepository.countBySourceType(CourseSourceType.SEEDED) >= 2000) {
-			log.info("[CourseDataLoader] SEEDED 데이터가 이미 존재합니다. 임포트를 건너뜁니다.");
+		if (courseRepository.existsBySourceType(CourseSourceType.SEEDED)) {
+			log.info("[CourseDataLoader] SEEDED 데이터가 이미 존재합니다. 임포트를 건너뜁니다. (재시드가 필요하면 SEEDED 강의를 모두 삭제 후 재시작하세요.)");
 			return;
 		}
 
@@ -51,7 +53,12 @@ public class CourseDataLoader implements ApplicationRunner {
 		}
 
 		List<Course> courses = new ArrayList<>();
+		Set<String> seenCourseCodes = new LinkedHashSet<>();
 		for (CourseDataImportDto dto : dtos) {
+			if (!seenCourseCodes.add(dto.getCourseCode())) {
+				log.debug("[CourseDataLoader] 중복 courseCode 건너뜀: {}", dto.getCourseCode());
+				continue;
+			}
 			String professorName = normalizeProfessor(dto.getProfessor());
 			String scheduleText = dto.getScheduleRaw() != null ? dto.getScheduleRaw() : "";
 			String firstClassroom = extractFirstClassroom(dto);
@@ -94,7 +101,8 @@ public class CourseDataLoader implements ApplicationRunner {
 		}
 
 		courseRepository.saveAll(courses);
-		log.info("[CourseDataLoader] {} 건 임포트 완료", courses.size());
+		log.info("[CourseDataLoader] {} 건 임포트 완료 (JSON 총 {} 건 중 중복 {} 건 제외)",
+			courses.size(), dtos.size(), dtos.size() - courses.size());
 	}
 
 	private String normalizeProfessor(String professor) {

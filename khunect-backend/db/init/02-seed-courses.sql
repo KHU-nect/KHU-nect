@@ -1,5 +1,7 @@
 -- Course seed data (auto-generated from 수강데이터_structured.json)
--- Runs only on first DB initialization
+-- Idempotent: safe to re-run without causing duplicate rows.
+-- course rows are skipped on conflict (unique key: course_code).
+-- course_schedules rows are only inserted when no SEEDED schedules exist yet.
 
 INSERT INTO course (course_code, course_name, professor_name, department_name, schedule_text, classroom, semester_year, semester_term, source_type, college, lecture_cd, is_online, created_at, updated_at) VALUES
 ('ENV385-01', '대기오염공정실험및설계', '이태정', '환경학및환경공학과', '목 16:30-21:20 (공102-1호)', '공102-1호', 2026, 'FIRST', 'SEEDED', '공과대학', 'ENV38501', false, NOW(), NOW()),
@@ -3440,7 +3442,17 @@ INSERT INTO course (course_code, course_name, professor_name, department_name, s
 ('EDU3103-G00', '교육방법및교육공학', '김수인', '후마니타스칼리지교육과정(교직전공)교직전공', '목 13:30-15:20 (멀803)', '멀803', 2026, 'FIRST', 'SEEDED', '후마니타스칼리지교육과정(국제)', 'EDU3103G00', false, NOW(), NOW()),
 ('EDU2114-G01', '디지털교육', '김수인', '후마니타스칼리지교육과정(교직전공)교직전공', '목 15:30-16:20 (멀803)', '멀803', 2026, 'FIRST', 'SEEDED', '후마니타스칼리지교육과정(국제)', 'EDU2114G01', false, NOW(), NOW()),
 ('EDU2107-G01', '학교폭력 예방 및 학생의 이해', '이유정', '후마니타스칼리지교육과정(교직전공)교직전공', '수 11:00-12:50 (멀604)', '멀604', 2026, 'FIRST', 'SEEDED', '후마니타스칼리지교육과정(국제)', 'EDU2107G01', false, NOW(), NOW()),
-('EDU2103-G00', '교육철학및교육사', '이유정', '후마니타스칼리지교육과정(교직전공)교직전공', '수 13:30-15:20 (멀604)', '멀604', 2026, 'FIRST', 'SEEDED', '후마니타스칼리지교육과정(국제)', 'EDU2103G00', false, NOW(), NOW());
+('EDU2103-G00', '교육철학및교육사', '이유정', '후마니타스칼리지교육과정(교직전공)교직전공', '수 13:30-15:20 (멀604)', '멀604', 2026, 'FIRST', 'SEEDED', '후마니타스칼리지교육과정(국제)', 'EDU2103G00', false, NOW(), NOW())
+ON CONFLICT (course_code) DO NOTHING;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM course_schedules cs
+        JOIN course c ON cs.course_id = c.id
+        WHERE c.source_type = 'SEEDED'
+        LIMIT 1
+    ) THEN
 
 INSERT INTO course_schedules (course_id, day, start_time, end_time, start_minutes, end_minutes, classroom)
 VALUES
@@ -6597,3 +6609,6 @@ VALUES
 ((SELECT id FROM course WHERE course_code = 'EDU2114-G01'), 'THU', '15:30', '16:20', 930, 980, '멀803'),
 ((SELECT id FROM course WHERE course_code = 'EDU2107-G01'), 'WED', '11:00', '12:50', 660, 770, '멀604'),
 ((SELECT id FROM course WHERE course_code = 'EDU2103-G00'), 'WED', '13:30', '15:20', 810, 920, '멀604');
+
+    END IF;
+END $$;

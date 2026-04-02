@@ -8,8 +8,16 @@
 
 ## 기본 프로필
 - 기본 프로필은 `local`
-- H2 in-memory DB 사용
-- 시작 시 sample CSV 강의 데이터와 demo user/match/chat 데이터가 seed 된다.
+- PostgreSQL DB 사용 (기본값: `localhost:5432/techblog_db`)
+- 시작 시 JSON 기반 강의 데이터(약 2300건)와 demo user/match/chat 데이터가 seed 된다.
+
+## 테스트 프로필
+- `test` 프로필은 H2 in-memory DB를 사용한다 (`./gradlew test` 실행 시 자동 적용).
+
+## 로컬 PostgreSQL 실행 (Docker)
+- `khunect-backend/` 디렉토리에서 `docker compose up db`로 PostgreSQL만 기동할 수 있다.
+- 첫 기동 시 컨테이너에 빈 DB가 생성되고, 앱 시작 후 `CourseDataLoader`가 JSON에서 데이터를 자동 적재한다.
+- 강의 데이터는 한 번만 적재되며, 재시작해도 중복 삽입되지 않는다.
 
 ## 주요 접속 경로
 - API base: `http://localhost:8080`
