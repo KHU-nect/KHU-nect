@@ -3,8 +3,18 @@
 ## 현재 구현 범위
 - CSV import는 실제 동작 경로를 구현했다.
 - `POST /api/admin/courses/import/csv`로 multipart CSV 업로드가 가능하다.
-- local/dev에서는 `sample-data/courses-sample.csv`를 앱 시작 시 자동 import한다.
 - 중복 `courseCode`는 새로 만들지 않고 기존 강의를 update한다.
+
+## JSON 기반 초기 시드 (CourseDataLoader)
+- `khunect-backend/src/main/resources/data/수강데이터_structured.json`에 있는 2300여 건의 강의 데이터를 앱 시작 시 자동으로 PostgreSQL에 적재한다.
+- `CourseDataLoader`가 `ApplicationRunner`로 동작하며, **SEEDED** 타입의 강의가 하나라도 존재하면 재적재를 건너뜁니다 (멱등 보장).
+- 데이터 출처: `data/수강데이터_structured.json` (2026학년도 1학기 강의 목록).
+
+## SQL 기반 수동 시드 (db/init/02-seed-courses.sql)
+- `khunect-backend/db/init/02-seed-courses.sql`은 동일한 데이터를 SQL INSERT로 제공한다.
+- PostgreSQL에 직접 실행하거나 `\i` 명령으로 import할 수 있다.
+- **멱등**: `course` 테이블 삽입은 `ON CONFLICT (course_code) DO NOTHING`으로 처리되고, `course_schedules`는 SEEDED 스케줄이 없을 때만 삽입된다.
+- ⚠️ 이 SQL은 JPA가 테이블을 생성한 **이후**에 실행해야 한다 (테이블이 없으면 실패). 앱을 한 번 기동한 후 실행하거나, CourseDataLoader를 이용하는 것이 더 간단하다.
 
 ## KHU Crawler 구조
 - `KhuCourseCrawlerService`는 fetch 와 import orchestration 역할을 가진다.
