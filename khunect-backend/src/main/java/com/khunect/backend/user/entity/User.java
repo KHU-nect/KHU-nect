@@ -52,6 +52,12 @@ public class User extends BaseTimeEntity {
 	@Column(nullable = false)
 	private int helpedCount;
 
+	@Column(length = 500)
+	private String bio;
+
+	@Column(length = 200)
+	private String todayQuestion;
+
 	private User(String email, String googleSub) {
 		this.email = email;
 		this.googleSub = googleSub;
@@ -80,9 +86,11 @@ public class User extends BaseTimeEntity {
 		this.signupCompleted = true;
 	}
 
-	public void updateProfile(String nickname, String major) {
+	public void updateProfile(String nickname, String major, String bio, String todayQuestion) {
 		this.nickname = nickname;
 		this.major = major;
+		this.bio = bio;
+		this.todayQuestion = todayQuestion;
 	}
 
 	public void updateGoogleSub(String googleSub) {

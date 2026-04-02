@@ -55,7 +55,9 @@ public class UserService {
 		User user = getOrCreateUser(email);
 		user.updateProfile(
 			normalizeText(request.nickname()),
-			normalizeText(request.major())
+			normalizeText(request.major()),
+			normalizeText(request.bio()),
+			normalizeText(request.todayQuestion())
 		);
 		return toMyProfileResponse(user, loadInterestSummaries(user));
 	}
@@ -92,7 +94,9 @@ public class UserService {
 			user.isSignupCompleted(),
 			user.getPoint(),
 			user.getLevel(),
-			interests
+			interests,
+			user.getBio(),
+			user.getTodayQuestion()
 		);
 	}
 

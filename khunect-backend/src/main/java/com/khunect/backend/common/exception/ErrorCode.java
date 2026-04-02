@@ -41,6 +41,8 @@ public enum ErrorCode {
 	INTEREST_ALREADY_ADDED(HttpStatus.CONFLICT, "INTEREST-409-1", "이미 추가된 관심사입니다."),
 	INTEREST_NOT_FOUND(HttpStatus.NOT_FOUND, "INTEREST-404-1", "관심사를 찾을 수 없습니다."),
 	USER_INTEREST_NOT_FOUND(HttpStatus.NOT_FOUND, "INTEREST-404-2", "사용자 관심사 정보를 찾을 수 없습니다."),
+	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER-404-1", "사용자를 찾을 수 없습니다."),
+	MATCHING_SELF_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "MATCH-400-2", "자기 자신과 매칭할 수 없습니다."),
 	INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON-500", "서버 내부 오류가 발생했습니다.");
 
 	private final HttpStatus status;

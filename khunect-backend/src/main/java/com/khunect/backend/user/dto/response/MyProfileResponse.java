@@ -11,7 +11,9 @@ public record MyProfileResponse(
 	boolean signupCompleted,
 	int point,
 	int level,
-	List<InterestSummary> interests
+	List<InterestSummary> interests,
+	String bio,
+	String todayQuestion
 ) {
 
 	public record InterestSummary(
