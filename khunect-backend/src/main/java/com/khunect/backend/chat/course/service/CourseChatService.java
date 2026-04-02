@@ -2,15 +2,20 @@ package com.khunect.backend.chat.course.service;
 
 import com.khunect.backend.chat.course.dto.request.EnterCourseChatRoomRequest;
 import com.khunect.backend.chat.course.dto.request.SendCourseChatMessageRequest;
+import com.khunect.backend.chat.course.dto.response.AcceptSitTogetherResponse;
 import com.khunect.backend.chat.course.dto.response.CourseChatMessageHistoryResponse;
 import com.khunect.backend.chat.course.dto.response.CourseChatMessageResponse;
 import com.khunect.backend.chat.course.dto.response.CourseChatRoomResponse;
+import com.khunect.backend.chat.course.entity.CourseChatMessageMode;
 import com.khunect.backend.chat.course.entity.CourseChatMessage;
 import com.khunect.backend.chat.course.entity.CourseChatRoom;
 import com.khunect.backend.chat.course.entity.CourseChatRoomMembership;
+import com.khunect.backend.chat.course.entity.SitTogetherRequestStatus;
 import com.khunect.backend.chat.course.repository.CourseChatMessageRepository;
 import com.khunect.backend.chat.course.repository.CourseChatRoomMembershipRepository;
 import com.khunect.backend.chat.course.repository.CourseChatRoomRepository;
+import com.khunect.backend.chat.direct.entity.DirectChatRoom;
+import com.khunect.backend.chat.direct.service.DirectChatService;
 import com.khunect.backend.common.exception.CustomException;
 import com.khunect.backend.common.exception.ErrorCode;
 import com.khunect.backend.course.entity.Course;
@@ -35,6 +40,7 @@ public class CourseChatService {
 	private final CourseService courseService;
 	private final UserService userService;
 	private final TimetableEntryRepository timetableEntryRepository;
+	private final DirectChatService directChatService;
 
 	public CourseChatService(
 		CourseChatRoomRepository courseChatRoomRepository,
@@ -42,7 +48,8 @@ public class CourseChatService {
 		CourseChatMessageRepository messageRepository,
 		CourseService courseService,
 		UserService userService,
-		TimetableEntryRepository timetableEntryRepository
+		TimetableEntryRepository timetableEntryRepository,
+		DirectChatService directChatService
 	) {
 		this.courseChatRoomRepository = courseChatRoomRepository;
 		this.membershipRepository = membershipRepository;
@@ -50,6 +57,7 @@ public class CourseChatService {
 		this.courseService = courseService;
 		this.userService = userService;
 		this.timetableEntryRepository = timetableEntryRepository;
+		this.directChatService = directChatService;
 	}
 
 	@Transactional
@@ -114,10 +122,37 @@ public class CourseChatService {
 		User user = userService.getOrCreateUser(email);
 		CourseChatRoom room = validateMembership(roomId, user.getId());
 		String normalizedContent = request.content().trim().replaceAll("\\s{2,}", " ");
+		CourseChatMessageMode mode = request.modeOrDefault();
 
-		CourseChatMessage message = messageRepository.save(CourseChatMessage.create(room, user, normalizedContent));
+		CourseChatMessage message = messageRepository.save(
+			CourseChatMessage.create(room, user, normalizedContent, mode)
+		);
 		room.updateLastMessageTime(message.getCreatedAt());
 		return toMessageResponse(message);
+	}
+
+	@Transactional
+	public AcceptSitTogetherResponse acceptSitTogether(String email, Long roomId, Long messageId) {
+		User accepter = userService.getOrCreateUser(email);
+		validateMembership(roomId, accepter.getId());
+
+		CourseChatMessage message = messageRepository.findByIdAndRoomIdForUpdate(roomId, messageId)
+			.orElseThrow(() -> new CustomException(ErrorCode.RESOURCE_NOT_FOUND));
+
+		if (message.getMode() != CourseChatMessageMode.SIT_TOGETHER) {
+			throw new CustomException(ErrorCode.COURSE_CHAT_SIT_TOGETHER_NOT_REQUEST);
+		}
+		if (message.getSender().getId().equals(accepter.getId())) {
+			throw new CustomException(ErrorCode.COURSE_CHAT_SIT_TOGETHER_SELF_ACCEPT_NOT_ALLOWED);
+		}
+		if (message.getSitTogetherStatus() == SitTogetherRequestStatus.ACCEPTED) {
+			throw new CustomException(ErrorCode.COURSE_CHAT_SIT_TOGETHER_ALREADY_ACCEPTED);
+		}
+
+		DirectChatRoom directChatRoom = directChatService.getOrCreateRoom(accepter, message.getSender());
+		message.acceptSitTogether(accepter, directChatRoom.getId());
+
+		return new AcceptSitTogetherResponse(message.getId(), roomId, directChatRoom.getId());
 	}
 
 	public boolean isMember(String email, Long roomId) {
@@ -153,6 +188,9 @@ public class CourseChatService {
 			message.getSender().getId(),
 			message.getSender().getNickname(),
 			message.getContent(),
+			message.getMode(),
+			message.getSitTogetherStatus(),
+			message.getSitTogetherDirectRoomId(),
 			message.getCreatedAt()
 		);
 	}

@@ -1,6 +1,7 @@
 package com.khunect.backend.chat.course.controller;
 
 import com.khunect.backend.chat.course.dto.request.EnterCourseChatRoomRequest;
+import com.khunect.backend.chat.course.dto.response.AcceptSitTogetherResponse;
 import com.khunect.backend.chat.course.dto.response.CourseChatMessageHistoryResponse;
 import com.khunect.backend.chat.course.dto.response.CourseChatRoomResponse;
 import com.khunect.backend.chat.course.service.CourseChatService;
@@ -52,6 +53,17 @@ public class CourseChatRoomController {
 	) {
 		return ApiResponse.success(
 			courseChatService.getMessages(authentication.getName(), roomId, beforeMessageId, size)
+		);
+	}
+
+	@PostMapping("/{roomId}/messages/{messageId}/sit-together/accept")
+	public ApiResponse<AcceptSitTogetherResponse> acceptSitTogether(
+		Authentication authentication,
+		@PathVariable Long roomId,
+		@PathVariable Long messageId
+	) {
+		return ApiResponse.success(
+			courseChatService.acceptSitTogether(authentication.getName(), roomId, messageId)
 		);
 	}
 }

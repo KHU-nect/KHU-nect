@@ -8,11 +8,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.khunect.backend.chat.course.dto.response.CourseChatMessageResponse;
+import com.khunect.backend.chat.course.entity.CourseChatMessageMode;
 import com.khunect.backend.chat.course.entity.CourseChatMessage;
 import com.khunect.backend.chat.course.entity.CourseChatRoom;
+import com.khunect.backend.chat.course.entity.SitTogetherRequestStatus;
 import com.khunect.backend.chat.course.repository.CourseChatMessageRepository;
 import com.khunect.backend.chat.course.repository.CourseChatRoomMembershipRepository;
 import com.khunect.backend.chat.course.repository.CourseChatRoomRepository;
+import com.khunect.backend.chat.direct.repository.DirectChatRoomRepository;
 import com.khunect.backend.common.security.JwtTokenProvider;
 import com.khunect.backend.course.entity.Course;
 import com.khunect.backend.course.entity.CourseSourceType;
@@ -75,6 +78,9 @@ class CourseChatIntegrationTest {
 	private CourseChatMessageRepository messageRepository;
 
 	@Autowired
+	private DirectChatRoomRepository directChatRoomRepository;
+
+	@Autowired
 	private JwtTokenProvider jwtTokenProvider;
 
 	@LocalServerPort
@@ -88,6 +94,7 @@ class CourseChatIntegrationTest {
 		messageRepository.deleteAll();
 		membershipRepository.deleteAll();
 		roomRepository.deleteAll();
+		directChatRoomRepository.deleteAll();
 		timetableEntryRepository.deleteAll();
 		courseRepository.deleteAll();
 		userRepository.deleteAll();
@@ -201,7 +208,42 @@ class CourseChatIntegrationTest {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.content.length()").value(1))
 			.andExpect(jsonPath("$.data.content[0].content").value("안녕하세요. 같이 과제해요!"))
+			.andExpect(jsonPath("$.data.content[0].mode").value("GENERAL"))
 			.andExpect(jsonPath("$.data.hasNext").value(false));
+	}
+
+	@Test
+	void sitTogetherAcceptCreatesDirectRoom() throws Exception {
+		User sender = userRepository.save(completedUser(USER_EMAIL, "2024123456"));
+		User accepter = userRepository.save(completedUser(OTHER_USER_EMAIL, "2024123457"));
+		timetableEntryRepository.save(TimetableEntry.create(sender, course));
+		timetableEntryRepository.save(TimetableEntry.create(accepter, course));
+
+		Long roomId = enterRoomAndReturnId(USER_EMAIL);
+		enterRoomAndReturnId(OTHER_USER_EMAIL);
+		String senderToken = jwtTokenProvider.createAccessToken(USER_EMAIL);
+
+		StompSession senderSession = connect(senderToken);
+		senderSession.send("/pub/course-chat/rooms/" + roomId + "/messages", Map.of(
+			"content", "같이 중앙도서관에서 들을래요?",
+			"mode", "SIT_TOGETHER"
+		));
+		awaitMessagePersisted();
+
+		CourseChatMessage message = messageRepository.findAll().getFirst();
+		assertThat(message.getMode()).isEqualTo(CourseChatMessageMode.SIT_TOGETHER);
+		assertThat(message.getSitTogetherStatus()).isEqualTo(SitTogetherRequestStatus.PENDING);
+
+		mockMvc.perform(post("/api/course-chat/rooms/{roomId}/messages/{messageId}/sit-together/accept", roomId, message.getId())
+				.with(user(OTHER_USER_EMAIL)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.sourceMessageId").value(message.getId()))
+			.andExpect(jsonPath("$.data.directRoomId").isNumber());
+
+		assertThat(directChatRoomRepository.findAll()).hasSize(1);
+		CourseChatMessage acceptedMessage = messageRepository.findById(message.getId()).orElseThrow();
+		assertThat(acceptedMessage.getSitTogetherStatus()).isEqualTo(SitTogetherRequestStatus.ACCEPTED);
+		assertThat(acceptedMessage.getSitTogetherDirectRoomId()).isNotNull();
 	}
 
 	@Test

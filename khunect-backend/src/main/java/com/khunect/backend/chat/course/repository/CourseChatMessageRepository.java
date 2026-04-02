@@ -3,7 +3,9 @@ package com.khunect.backend.chat.course.repository;
 import com.khunect.backend.chat.course.entity.CourseChatMessage;
 import java.util.List;
 import java.util.Optional;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -29,4 +31,15 @@ public interface CourseChatMessageRepository extends JpaRepository<CourseChatMes
 	List<CourseChatMessage> findHistoryByRoomIdAndBeforeMessageId(Long roomId, Long beforeMessageId, Pageable pageable);
 
 	Optional<CourseChatMessage> findFirstByRoomIdOrderByIdDesc(Long roomId);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+		select message
+		from CourseChatMessage message
+		join fetch message.sender sender
+		join fetch message.room room
+		where message.id = :messageId
+		  and room.id = :roomId
+		""")
+	Optional<CourseChatMessage> findByIdAndRoomIdForUpdate(Long roomId, Long messageId);
 }
