@@ -14,6 +14,8 @@ public interface TimetableEntryRepository extends JpaRepository<TimetableEntry, 
 
 	long countByUserId(Long userId);
 
+	long countByCourseId(Long courseId);
+
 	@Query("""
 		select te
 		from TimetableEntry te

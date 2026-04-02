@@ -10,6 +10,7 @@ public record TimetableEntryResponse(
 	String scheduleText,
 	String classroom,
 	int semesterYear,
-	String semesterTerm
+	String semesterTerm,
+	long studentCount
 ) {
 }

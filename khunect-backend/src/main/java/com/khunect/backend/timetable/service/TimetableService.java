@@ -65,6 +65,7 @@ public class TimetableService {
 
 	private TimetableEntryResponse toResponse(TimetableEntry entry) {
 		Course course = entry.getCourse();
+		long studentCount = timetableEntryRepository.countByCourseId(course.getId());
 		return new TimetableEntryResponse(
 			entry.getId(),
 			course.getId(),
@@ -75,7 +76,8 @@ public class TimetableService {
 			course.getScheduleText(),
 			course.getClassroom(),
 			course.getSemesterYear(),
-			course.getSemesterTerm().name()
+			course.getSemesterTerm().name(),
+			studentCount
 		);
 	}
 }
