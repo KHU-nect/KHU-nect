@@ -54,10 +54,13 @@ public class UserService {
 	@Transactional
 	public MyProfileResponse updateProfile(String email, UpdateProfileRequest request) {
 		User user = getOrCreateUser(email);
+		String introduction = request.introduction() == null
+			? user.getIntroduction()
+			: normalizeText(request.introduction());
 		user.updateProfile(
 			normalizeText(request.nickname()),
 			normalizeText(request.major()),
-			normalizeText(request.introduction())
+			introduction
 		);
 		return toMyProfileResponse(user, loadInterestSummaries(user));
 	}

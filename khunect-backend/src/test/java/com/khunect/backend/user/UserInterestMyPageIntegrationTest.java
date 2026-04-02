@@ -197,4 +197,26 @@ class UserInterestMyPageIntegrationTest {
 			.andExpect(jsonPath("$.data.introduction").value("새 소개글"))
 			.andExpect(jsonPath("$.data.studentNumber").value("2024123456"));
 	}
+
+	@Test
+	void updateProfilePreservesExistingIntroductionWhenOmitted() throws Exception {
+		User user = User.create(USER_EMAIL);
+		user.completeSignup("old_name", "Old Major", "기존 소개글", "2024123456");
+		userRepository.save(user);
+
+		mockMvc.perform(patch("/api/users/me")
+				.with(user(USER_EMAIL))
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "nickname": "new_name",
+					  "major": "New Major"
+					}
+					"""))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.nickname").value("new_name"))
+			.andExpect(jsonPath("$.data.major").value("New Major"))
+			.andExpect(jsonPath("$.data.introduction").value("기존 소개글"))
+			.andExpect(jsonPath("$.data.studentNumber").value("2024123456"));
+	}
 }
