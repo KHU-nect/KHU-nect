@@ -47,7 +47,7 @@ public class CourseChatMessage extends BaseTimeEntity {
 	private String content;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 20)
+	@Column(name = "message_mode", nullable = false, length = 20)
 	private CourseChatMessageMode mode;
 
 	@Enumerated(EnumType.STRING)
