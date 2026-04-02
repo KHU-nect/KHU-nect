@@ -32,12 +32,15 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 			);
 		}
 
-		String requiredSuffix = "@" + authProperties.getAllowedEmailDomain();
-		if (!email.toLowerCase().endsWith(requiredSuffix.toLowerCase())) {
-			throw new OAuth2AuthenticationException(
-				new OAuth2Error(ErrorCode.OAUTH2_EMAIL_DOMAIN_NOT_ALLOWED.getCode()),
-				ErrorCode.OAUTH2_EMAIL_DOMAIN_NOT_ALLOWED.getMessage()
-			);
+		String domain = authProperties.getAllowedEmailDomain();
+		if (!"*".equals(domain)) {
+			String requiredSuffix = "@" + domain;
+			if (!email.toLowerCase().endsWith(requiredSuffix.toLowerCase())) {
+				throw new OAuth2AuthenticationException(
+					new OAuth2Error(ErrorCode.OAUTH2_EMAIL_DOMAIN_NOT_ALLOWED.getCode()),
+					ErrorCode.OAUTH2_EMAIL_DOMAIN_NOT_ALLOWED.getMessage()
+				);
+			}
 		}
 
 		return new DefaultOAuth2User(oAuth2User.getAuthorities(), oAuth2User.getAttributes(), "sub");

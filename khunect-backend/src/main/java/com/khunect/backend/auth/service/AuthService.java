@@ -153,9 +153,12 @@ public class AuthService {
 		if (email == null || email.isBlank()) {
 			throw new CustomException(ErrorCode.OAUTH2_EMAIL_NOT_FOUND);
 		}
-		String requiredSuffix = "@" + authProperties.getAllowedEmailDomain();
-		if (!email.toLowerCase().endsWith(requiredSuffix.toLowerCase())) {
-			throw new CustomException(ErrorCode.OAUTH2_EMAIL_DOMAIN_NOT_ALLOWED);
+		String domain = authProperties.getAllowedEmailDomain();
+		if (!"*".equals(domain)) {
+			String requiredSuffix = "@" + domain;
+			if (!email.toLowerCase().endsWith(requiredSuffix.toLowerCase())) {
+				throw new CustomException(ErrorCode.OAUTH2_EMAIL_DOMAIN_NOT_ALLOWED);
+			}
 		}
 	}
 
