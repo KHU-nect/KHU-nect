@@ -12,6 +12,9 @@ public record UpdateProfileRequest(
 
 	@NotBlank(message = "전공은 필수입니다.")
 	@Size(min = 2, max = 50, message = "전공은 2자 이상 50자 이하여야 합니다.")
-	String major
+	String major,
+
+	@Size(max = 300, message = "소개글은 300자 이하여야 합니다.")
+	String introduction
 ) {
 }

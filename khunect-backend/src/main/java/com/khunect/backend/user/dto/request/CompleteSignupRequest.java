@@ -14,6 +14,9 @@ public record CompleteSignupRequest(
 	@Size(min = 2, max = 50, message = "전공은 2자 이상 50자 이하여야 합니다.")
 	String major,
 
+	@Size(max = 300, message = "소개글은 300자 이하여야 합니다.")
+	String introduction,
+
 	@NotBlank(message = "학번은 필수입니다.")
 	@Pattern(regexp = "^\\d{10}$", message = "학번은 10자리 숫자여야 합니다.")
 	String studentNumber

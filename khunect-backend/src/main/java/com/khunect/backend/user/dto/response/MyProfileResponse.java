@@ -7,6 +7,7 @@ public record MyProfileResponse(
 	String email,
 	String nickname,
 	String major,
+	String introduction,
 	String studentNumber,
 	boolean signupCompleted,
 	int point,

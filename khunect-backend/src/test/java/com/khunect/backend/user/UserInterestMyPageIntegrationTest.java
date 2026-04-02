@@ -75,6 +75,7 @@ class UserInterestMyPageIntegrationTest {
 			{
 			  "nickname": "khunect_1",
 			  "major": "Computer Science",
+			  "introduction": "안녕하세요. 같이 공부해요!",
 			  "studentNumber": "2024123456"
 			}
 			""";
@@ -87,6 +88,7 @@ class UserInterestMyPageIntegrationTest {
 			.andExpect(jsonPath("$.success").value(true))
 			.andExpect(jsonPath("$.data.email").value(USER_EMAIL))
 			.andExpect(jsonPath("$.data.signupCompleted").value(true))
+			.andExpect(jsonPath("$.data.introduction").value("안녕하세요. 같이 공부해요!"))
 			.andExpect(jsonPath("$.data.studentNumber").value("2024123456"));
 	}
 
@@ -100,6 +102,7 @@ class UserInterestMyPageIntegrationTest {
 			{
 			  "nickname": "khunect_2",
 			  "major": "Business",
+			  "introduction": "소개글입니다.",
 			  "studentNumber": "2024999999"
 			}
 			""";
@@ -175,7 +178,7 @@ class UserInterestMyPageIntegrationTest {
 	@Test
 	void updateProfileChangesOnlyNicknameAndMajor() throws Exception {
 		User user = User.create(USER_EMAIL);
-		user.completeSignup("old_name", "Old Major", "2024123456");
+		user.completeSignup("old_name", "Old Major", "기존 소개글", "2024123456");
 		userRepository.save(user);
 
 		mockMvc.perform(patch("/api/users/me")
@@ -184,12 +187,14 @@ class UserInterestMyPageIntegrationTest {
 				.content("""
 					{
 					  "nickname": "new_name",
-					  "major": "New Major"
+					  "major": "New Major",
+					  "introduction": "새 소개글"
 					}
 					"""))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.data.nickname").value("new_name"))
 			.andExpect(jsonPath("$.data.major").value("New Major"))
+			.andExpect(jsonPath("$.data.introduction").value("새 소개글"))
 			.andExpect(jsonPath("$.data.studentNumber").value("2024123456"));
 	}
 }

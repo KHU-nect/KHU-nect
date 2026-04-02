@@ -34,6 +34,9 @@ public class User extends BaseTimeEntity {
 	@Column(length = 50)
 	private String major;
 
+	@Column(length = 300)
+	private String introduction;
+
 	@Column(unique = true, length = 10)
 	private String studentNumber;
 
@@ -71,18 +74,28 @@ public class User extends BaseTimeEntity {
 	}
 
 	public void completeSignup(String nickname, String major, String studentNumber) {
+		completeSignup(nickname, major, null, studentNumber);
+	}
+
+	public void completeSignup(String nickname, String major, String introduction, String studentNumber) {
 		if (signupCompleted) {
 			throw new IllegalStateException("signup already completed");
 		}
 		this.nickname = nickname;
 		this.major = major;
+		this.introduction = introduction;
 		this.studentNumber = studentNumber;
 		this.signupCompleted = true;
 	}
 
 	public void updateProfile(String nickname, String major) {
+		updateProfile(nickname, major, this.introduction);
+	}
+
+	public void updateProfile(String nickname, String major, String introduction) {
 		this.nickname = nickname;
 		this.major = major;
+		this.introduction = introduction;
 	}
 
 	public void updateGoogleSub(String googleSub) {
