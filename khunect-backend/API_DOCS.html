@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KHU-nect API 명세서</title>
+<style>
+  :root {
+    --get:    #10b981; --get-bg:    #ecfdf5;
+    --post:   #3b82f6; --post-bg:   #eff6ff;
+    --patch:  #f59e0b; --patch-bg:  #fffbeb;
+    --delete: #ef4444; --delete-bg: #fef2f2;
+    --ws:     #8b5cf6; --ws-bg:     #f5f3ff;
+    --sidebar-w: 260px;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --muted: #64748b;
+    --code-bg: #1e293b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w); min-height: 100vh; background: #0f172a; color: #cbd5e1;
+    position: fixed; top: 0; left: 0; overflow-y: auto; z-index: 100;
+    display: flex; flex-direction: column;
+  }
+  #sidebar .logo {
+    padding: 24px 20px 16px; font-size: 18px; font-weight: 700;
+    color: #fff; border-bottom: 1px solid #1e293b; letter-spacing: -0.3px;
+  }
+  #sidebar .logo span { color: #38bdf8; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav a {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 20px; font-size: 13px; color: #94a3b8;
+    text-decoration: none; transition: all 0.15s; border-left: 3px solid transparent;
+  }
+  #sidebar nav a:hover { color: #fff; background: #1e293b; border-left-color: #38bdf8; }
+  #sidebar nav .section-title {
+    padding: 16px 20px 6px; font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1px; color: #475569;
+  }
+  #sidebar .base-url-box {
+    margin: 12px 16px; padding: 10px 12px; background: #1e293b;
+    border-radius: 8px; font-size: 11px; color: #94a3b8; word-break: break-all;
+  }
+  #sidebar .base-url-box strong { color: #38bdf8; display: block; margin-bottom: 4px; }
+
+  /* ── Main ── */
+  #main { margin-left: var(--sidebar-w); flex: 1; padding: 40px 48px; max-width: 960px; }
+  h1 { font-size: 28px; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+  .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 40px; }
+
+  /* ── Section ── */
+  .section { margin-bottom: 56px; }
+  .section-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--border);
+  }
+  .section-icon { font-size: 22px; }
+  .section-header h2 { font-size: 20px; font-weight: 700; }
+  .section-header .tag {
+    font-size: 11px; padding: 3px 8px; border-radius: 20px;
+    background: #f1f5f9; color: var(--muted); font-weight: 600;
+  }
+
+  /* ── Endpoint Card ── */
+  .ep-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; margin-bottom: 16px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .ep-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; cursor: pointer; user-select: none;
+    transition: background 0.15s;
+  }
+  .ep-header:hover { background: #f8fafc; }
+  .badge {
+    font-size: 11px; font-weight: 700; padding: 3px 10px;
+    border-radius: 6px; min-width: 60px; text-align: center; letter-spacing: 0.5px;
+  }
+  .badge.GET    { background: var(--get-bg);    color: var(--get);    border: 1px solid #a7f3d0; }
+  .badge.POST   { background: var(--post-bg);   color: var(--post);   border: 1px solid #bfdbfe; }
+  .badge.PATCH  { background: var(--patch-bg);  color: var(--patch);  border: 1px solid #fde68a; }
+  .badge.DELETE { background: var(--delete-bg); color: var(--delete); border: 1px solid #fecaca; }
+  .badge.WS     { background: var(--ws-bg);     color: var(--ws);     border: 1px solid #ddd6fe; }
+  .ep-path { font-family: 'Consolas', monospace; font-size: 14px; font-weight: 600; color: var(--text); }
+  .ep-desc { font-size: 13px; color: var(--muted); margin-left: auto; }
+  .auth-required {
+    font-size: 10px; padding: 2px 7px; border-radius: 10px;
+    background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;
+    font-weight: 600; white-space: nowrap;
+  }
+  .ep-body { padding: 0 20px 20px; border-top: 1px solid var(--border); display: none; }
+  .ep-body.open { display: block; }
+  .ep-body .toggle-arrow { float: right; color: var(--muted); transition: transform 0.2s; }
+  .ep-header.active .toggle-arrow { transform: rotate(180deg); }
+
+  /* ── Tables ── */
+  .params-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--muted); margin: 16px 0 8px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f1f5f9; padding: 8px 12px; text-align: left; font-weight: 600; font-size: 12px; color: var(--muted); }
+  td { padding: 8px 12px; border-top: 1px solid var(--border); vertical-align: top; }
+  td code { font-family: 'Consolas', monospace; font-size: 12px; background: #f1f5f9; padding: 1px 5px; border-radius: 4px; color: #7c3aed; }
+  .req { color: #ef4444; font-size: 10px; font-weight: 700; }
+  .opt { color: #94a3b8; font-size: 10px; }
+  tr:last-child td { border-bottom: 1px solid var(--border); }
+
+  /* ── Code Block ── */
+  pre {
+    background: var(--code-bg); color: #e2e8f0; border-radius: 8px;
+    padding: 16px; font-size: 12.5px; font-family: 'Consolas', monospace;
+    overflow-x: auto; margin-top: 8px; line-height: 1.6;
+  }
+  .json-key   { color: #93c5fd; }
+  .json-str   { color: #86efac; }
+  .json-num   { color: #fca5a5; }
+  .json-bool  { color: #fbbf24; }
+  .json-null  { color: #94a3b8; }
+
+  /* ── Auth Flow ── */
+  .flow {
+    display: flex; align-items: center; gap: 0;
+    background: #f8fafc; border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; margin: 20px 0; overflow-x: auto;
+  }
+  .flow-step {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    min-width: 110px; text-align: center;
+  }
+  .flow-icon { font-size: 28px; }
+  .flow-name { font-size: 12px; font-weight: 700; color: var(--text); }
+  .flow-sub  { font-size: 10px; color: var(--muted); }
+  .flow-arrow {
+    font-size: 20px; color: #cbd5e1; padding: 0 8px;
+    display: flex; align-items: center; flex-direction: column; gap: 2px;
+  }
+  .flow-arrow span { font-size: 10px; color: #3b82f6; font-weight: 600; white-space: nowrap; }
+
+  /* ── WS Box ── */
+  .ws-info {
+    background: var(--ws-bg); border: 1px solid #ddd6fe;
+    border-radius: 8px; padding: 14px 16px; margin-top: 12px;
+  }
+  .ws-info .ws-title { font-size: 12px; font-weight: 700; color: var(--ws); margin-bottom: 10px; }
+  .ws-row { display: flex; gap: 8px; align-items: baseline; margin-bottom: 6px; font-size: 12.5px; }
+  .ws-label { font-size: 10px; font-weight: 700; color: var(--ws); min-width: 48px; }
+
+  /* ── Info Callout ── */
+  .callout {
+    display: flex; gap: 10px; padding: 12px 16px; border-radius: 8px;
+    font-size: 13px; margin: 16px 0;
+  }
+  .callout.info  { background: #eff6ff; border-left: 3px solid #3b82f6; color: #1d4ed8; }
+  .callout.warn  { background: #fffbeb; border-left: 3px solid #f59e0b; color: #92400e; }
+
+  /* ── Response Wrap ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+  .col-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 6px; }
+
+  /* Scrollspy highlight */
+  :target { scroll-margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════ SIDEBAR ════════════════════════════════════ -->
+<aside id="sidebar">
+  <div class="logo">KHU<span>-nect</span> API</div>
+  <div class="base-url-box">
+    <strong>Base URL</strong>
+    http://34.47.66.208.nip.io:8080
+  </div>
+  <nav>
+    <div class="section-title">인증</div>
+    <a href="#auth">🔐 Auth</a>
+    <div class="section-title">사용자</div>
+    <a href="#user">👤 User</a>
+    <a href="#mypage">📊 MyPage</a>
+    <a href="#interest">⭐ Interest</a>
+    <div class="section-title">강의</div>
+    <a href="#course">📚 Course</a>
+    <a href="#timetable">📅 Timetable</a>
+    <div class="section-title">채팅</div>
+    <a href="#course-chat">💬 Course Chat</a>
+    <a href="#direct-chat">✉️ Direct Chat</a>
+    <div class="section-title">매칭</div>
+    <a href="#match">🤝 Match Post</a>
+  </nav>
+</aside>
+
+<!-- ════════════════════════════════════ MAIN ════════════════════════════════════ -->
+<main id="main">
+<h1>KHU-nect API 명세서</h1>
+<p class="subtitle">모든 응답은 <code>{"success": true, "data": {...}}</code> 형태로 래핑됩니다 &nbsp;·&nbsp; 인증 필요 API는 <span class="auth-required">🔑 Auth</span> 표시</p>
+
+<!-- ══════════ AUTH ══════════ -->
+<section class="section" id="auth">
+  <div class="section-header">
+    <span class="section-icon">🔐</span>
+    <h2>Auth — 인증</h2>
+    <span class="tag">/api/auth</span>
+  </div>
+
+  <!-- 로그인 플로우 -->
+  <div class="flow">
+    <div class="flow-step"><div class="flow-icon">👤</div><div class="flow-name">유저</div><div class="flow-sub">브라우저</div></div>
+    <div class="flow-arrow">→<span>구글 로그인 클릭</span></div>
+    <div class="flow-step"><div class="flow-icon">🖥</div><div class="flow-name">백엔드</div><div class="flow-sub">/oauth2/authorization/google</div></div>
+    <div class="flow-arrow">→<span>리다이렉트</span></div>
+    <div class="flow-step"><div class="flow-icon">🔵</div><div class="flow-name">Google</div><div class="flow-sub">OAuth2 인증</div></div>
+    <div class="flow-arrow">→<span>code 발급</span></div>
+    <div class="flow-step"><div class="flow-icon">🖥</div><div class="flow-name">백엔드</div><div class="flow-sub">/auth/callback?code=xxx</div></div>
+    <div class="flow-arrow">→<span>code 전달</span></div>
+    <div class="flow-step"><div class="flow-icon">💻</div><div class="flow-name">프론트</div><div class="flow-sub">POST /api/auth/exchange</div></div>
+    <div class="flow-arrow">→<span>JWT 발급</span></div>
+    <div class="flow-step"><div class="flow-icon">✅</div><div class="flow-name">로그인 완료</div><div class="flow-sub">accessToken 저장</div></div>
+  </div>
+
+  <div class="callout info">💡 이후 모든 인증 API는 HTTP Header에 <strong>Authorization: Bearer {accessToken}</strong> 을 포함해야 합니다.</div>
+
+  <!-- exchange -->
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge POST">POST</span>
+      <span class="ep-path">/api/auth/exchange</span>
+      <span class="ep-desc">구글 OAuth2 code → JWT 교환</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Request Body</div>
+      <table><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr>
+        <tr><td><code>code</code></td><td>String</td><td><span class="req">필수</span></td><td>Google OAuth2 인가 코드</td></tr>
+      </table>
+      <div class="two-col">
+        <div>
+          <div class="col-label">Request</div>
+          <pre><span class="json-key">"code"</span>: <span class="json-str">"4/0AX4XfWi..."</span></pre>
+        </div>
+        <div>
+          <div class="col-label">Response</div>
+          <pre>{
+  <span class="json-key">"accessToken"</span>:  <span class="json-str">"eyJhbGci..."</span>,
+  <span class="json-key">"refreshToken"</span>: <span class="json-str">"eyJhbGci..."</span>,
+  <span class="json-key">"signupCompleted"</span>: <span class="json-bool">false</span>,
+  <span class="json-key">"user"</span>: {
+    <span class="json-key">"id"</span>: <span class="json-num">1</span>,
+    <span class="json-key">"email"</span>: <span class="json-str">"student@khu.ac.kr"</span>,
+    <span class="json-key">"nickname"</span>: <span class="json-null">null</span>
+  }
+}</pre>
+        </div>
+      </div>
+      <div class="callout warn">⚠️ signupCompleted가 false이면 프론트에서 회원가입 추가정보 입력 화면으로 이동시켜야 합니다.</div>
+    </div>
+  </div>
+
+  <!-- refresh -->
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge POST">POST</span>
+      <span class="ep-path">/api/auth/refresh</span>
+      <span class="ep-desc">액세스 토큰 갱신</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Request Body</div>
+      <table><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr>
+        <tr><td><code>refreshToken</code></td><td>String</td><td><span class="req">필수</span></td><td>리프레시 토큰</td></tr>
+      </table>
+      <div class="two-col">
+        <div><div class="col-label">Request</div><pre><span class="json-key">"refreshToken"</span>: <span class="json-str">"eyJhbGci..."</span></pre></div>
+        <div><div class="col-label">Response</div><pre>{
+  <span class="json-key">"accessToken"</span>:  <span class="json-str">"eyJhbGci..."</span>,
+  <span class="json-key">"refreshToken"</span>: <span class="json-str">"eyJhbGci..."</span>
+}</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- logout -->
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge POST">POST</span>
+      <span class="ep-path">/api/auth/logout</span>
+      <span class="ep-desc">로그아웃</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Request Body</div>
+      <table><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr>
+        <tr><td><code>refreshToken</code></td><td>String</td><td><span class="req">필수</span></td><td>리프레시 토큰 (서버에서 무효화)</td></tr>
+      </table>
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre><span class="json-key">"data"</span>: <span class="json-null">null</span>  <span style="color:#475569">// 성공 시 data 없음</span></pre>
+    </div>
+  </div>
+
+  <!-- me -->
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/auth/me</span>
+      <span class="ep-desc">현재 로그인 사용자 정보</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre>{
+  <span class="json-key">"id"</span>:               <span class="json-num">1</span>,
+  <span class="json-key">"email"</span>:            <span class="json-str">"student@khu.ac.kr"</span>,
+  <span class="json-key">"nickname"</span>:         <span class="json-str">"김경희"</span>,
+  <span class="json-key">"major"</span>:            <span class="json-str">"컴퓨터공학과"</span>,
+  <span class="json-key">"studentNumber"</span>:   <span class="json-str">"2024123456"</span>,
+  <span class="json-key">"signupCompleted"</span>: <span class="json-bool">true</span>
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ USER ══════════ -->
+<section class="section" id="user">
+  <div class="section-header">
+    <span class="section-icon">👤</span>
+    <h2>User — 사용자</h2>
+    <span class="tag">/api/users/me</span>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge POST">POST</span>
+      <span class="ep-path">/api/users/me/signup-completion</span>
+      <span class="ep-desc">회원가입 추가정보 입력</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Request Body</div>
+      <table><tr><th>필드</th><th>타입</th><th>필수</th><th>조건</th></tr>
+        <tr><td><code>nickname</code></td><td>String</td><td><span class="req">필수</span></td><td>2~20자, 한글/영문/숫자/_</td></tr>
+        <tr><td><code>major</code></td><td>String</td><td><span class="req">필수</span></td><td>2~50자</td></tr>
+        <tr><td><code>studentNumber</code></td><td>String</td><td><span class="req">필수</span></td><td>10자리 숫자</td></tr>
+      </table>
+      <div class="two-col">
+        <div><div class="col-label">Request</div><pre>{
+  <span class="json-key">"nickname"</span>:      <span class="json-str">"김경희"</span>,
+  <span class="json-key">"major"</span>:         <span class="json-str">"컴퓨터공학과"</span>,
+  <span class="json-key">"studentNumber"</span>: <span class="json-str">"2024123456"</span>
+}</pre></div>
+        <div><div class="col-label">Response (MyProfileResponse)</div><pre>{
+  <span class="json-key">"userId"</span>:          <span class="json-num">1</span>,
+  <span class="json-key">"email"</span>:           <span class="json-str">"student@khu.ac.kr"</span>,
+  <span class="json-key">"nickname"</span>:        <span class="json-str">"김경희"</span>,
+  <span class="json-key">"major"</span>:           <span class="json-str">"컴퓨터공학과"</span>,
+  <span class="json-key">"studentNumber"</span>:  <span class="json-str">"2024123456"</span>,
+  <span class="json-key">"signupCompleted"</span>: <span class="json-bool">true</span>,
+  <span class="json-key">"point"</span>:           <span class="json-num">0</span>,
+  <span class="json-key">"level"</span>:           <span class="json-num">1</span>,
+  <span class="json-key">"interests"</span>:      <span class="json-str">[]</span>
+}</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/users/me</span>
+      <span class="ep-desc">내 프로필 조회</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre>→ MyProfileResponse (위와 동일한 구조)</pre>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge PATCH">PATCH</span>
+      <span class="ep-path">/api/users/me</span>
+      <span class="ep-desc">프로필 수정</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Request Body</div>
+      <table><tr><th>필드</th><th>타입</th><th>필수</th><th>조건</th></tr>
+        <tr><td><code>nickname</code></td><td>String</td><td><span class="req">필수</span></td><td>2~20자, 한글/영문/숫자/_</td></tr>
+        <tr><td><code>major</code></td><td>String</td><td><span class="req">필수</span></td><td>2~50자</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ MYPAGE ══════════ -->
+<section class="section" id="mypage">
+  <div class="section-header">
+    <span class="section-icon">📊</span>
+    <h2>MyPage — 마이페이지</h2>
+    <span class="tag">/api/mypage</span>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/mypage/summary</span>
+      <span class="ep-desc">마이페이지 요약 정보</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre>{
+  <span class="json-key">"nickname"</span>:             <span class="json-str">"김경희"</span>,
+  <span class="json-key">"major"</span>:                <span class="json-str">"컴퓨터공학과"</span>,
+  <span class="json-key">"maskedStudentNumber"</span>:  <span class="json-str">"2024***456"</span>,
+  <span class="json-key">"point"</span>:               <span class="json-num">120</span>,
+  <span class="json-key">"level"</span>:               <span class="json-num">3</span>,
+  <span class="json-key">"registeredCourseCount"</span>: <span class="json-num">5</span>,
+  <span class="json-key">"successfulMatchCount"</span>:  <span class="json-num">2</span>,
+  <span class="json-key">"helpedCount"</span>:          <span class="json-num">4</span>,
+  <span class="json-key">"weeklyStats"</span>: {
+    <span class="json-key">"courseChatMessageCount"</span>:   <span class="json-num">30</span>,
+    <span class="json-key">"directChatMessageCount"</span>:   <span class="json-num">12</span>,
+    <span class="json-key">"matchPostCreatedCount"</span>:    <span class="json-num">1</span>,
+    <span class="json-key">"acceptedMatchCount"</span>:       <span class="json-num">1</span>
+  }
+}</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ INTEREST ══════════ -->
+<section class="section" id="interest">
+  <div class="section-header">
+    <span class="section-icon">⭐</span>
+    <h2>Interest — 관심사</h2>
+    <span class="tag">/api/interests/me</span>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/interests/me</span>
+      <span class="ep-desc">내 관심사 목록</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre>[
+  { <span class="json-key">"interestId"</span>: <span class="json-num">1</span>, <span class="json-key">"name"</span>: <span class="json-str">"알고리즘"</span> },
+  { <span class="json-key">"interestId"</span>: <span class="json-num">2</span>, <span class="json-key">"name"</span>: <span class="json-str">"백엔드"</span> }
+]</pre>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge POST">POST</span>
+      <span class="ep-path">/api/interests/me</span>
+      <span class="ep-desc">관심사 추가</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Request Body</div>
+      <table><tr><th>필드</th><th>타입</th><th>필수</th><th>조건</th></tr>
+        <tr><td><code>name</code></td><td>String</td><td><span class="req">필수</span></td><td>최대 30자</td></tr>
+      </table>
+      <div class="two-col">
+        <div><div class="col-label">Request</div><pre>{ <span class="json-key">"name"</span>: <span class="json-str">"알고리즘"</span> }</pre></div>
+        <div><div class="col-label">Response</div><pre>{ <span class="json-key">"interestId"</span>: <span class="json-num">3</span>, <span class="json-key">"name"</span>: <span class="json-str">"알고리즘"</span> }</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge DELETE">DELETE</span>
+      <span class="ep-path">/api/interests/me/{interestId}</span>
+      <span class="ep-desc">관심사 삭제</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Path Variable</div>
+      <table><tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+        <tr><td><code>interestId</code></td><td>Long</td><td>삭제할 관심사 ID</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ COURSE ══════════ -->
+<section class="section" id="course">
+  <div class="section-header">
+    <span class="section-icon">📚</span>
+    <h2>Course — 강의</h2>
+    <span class="tag">/api/courses</span>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/courses</span>
+      <span class="ep-desc">강의 검색 (페이지네이션)</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Query Parameters</div>
+      <table><tr><th>파라미터</th><th>타입</th><th>기본값</th><th>설명</th></tr>
+        <tr><td><code>keyword</code></td><td>String</td><td><span class="opt">없음</span></td><td>강의명·교수명·코드 통합 검색</td></tr>
+        <tr><td><code>page</code></td><td>int</td><td>0</td><td>페이지 번호 (0부터)</td></tr>
+        <tr><td><code>size</code></td><td>int</td><td>10</td><td>페이지 크기 (최대 100)</td></tr>
+      </table>
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre>{
+  <span class="json-key">"content"</span>: [
+    {
+      <span class="json-key">"id"</span>:             <span class="json-num">1</span>,
+      <span class="json-key">"courseCode"</span>:    <span class="json-str">"ENV385-01"</span>,
+      <span class="json-key">"courseName"</span>:   <span class="json-str">"대기오염공정실험및설계"</span>,
+      <span class="json-key">"professorName"</span>: <span class="json-str">"이태정"</span>,
+      <span class="json-key">"departmentName"</span>:<span class="json-str">"환경학및환경공학과"</span>,
+      <span class="json-key">"scheduleText"</span>: <span class="json-str">"목 16:30-21:20 (공102-1호)"</span>,
+      <span class="json-key">"classroom"</span>:    <span class="json-str">"공102-1호"</span>,
+      <span class="json-key">"semesterYear"</span>:  <span class="json-num">2026</span>,
+      <span class="json-key">"semesterTerm"</span>: <span class="json-str">"FIRST"</span>,
+      <span class="json-key">"sourceType"</span>:   <span class="json-str">"SEEDED"</span>
+    }
+  ],
+  <span class="json-key">"page"</span>:          <span class="json-num">0</span>,
+  <span class="json-key">"size"</span>:          <span class="json-num">10</span>,
+  <span class="json-key">"totalElements"</span>: <span class="json-num">2314</span>,
+  <span class="json-key">"totalPages"</span>:    <span class="json-num">232</span>,
+  <span class="json-key">"hasNext"</span>:       <span class="json-bool">true</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/courses/search</span>
+      <span class="ep-desc">타입별 검색 + 시간표 슬롯 포함</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Query Parameters</div>
+      <table><tr><th>파라미터</th><th>타입</th><th>기본값</th><th>설명</th></tr>
+        <tr><td><code>type</code></td><td>String</td><td>course_name</td><td><code>course_name</code> 또는 <code>professor</code></td></tr>
+        <tr><td><code>keyword</code></td><td>String</td><td><span class="req">필수</span></td><td>검색어</td></tr>
+      </table>
+      <div class="col-label" style="margin-top:12px">Response — 시간표 격자 배치용 슬롯 포함</div>
+      <pre>[
+  {
+    <span class="json-key">"id"</span>:             <span class="json-num">3</span>,
+    <span class="json-key">"courseCode"</span>:    <span class="json-str">"ENV398-00"</span>,
+    <span class="json-key">"courseName"</span>:   <span class="json-str">"ESG규제리스크관리"</span>,
+    <span class="json-key">"professorName"</span>: <span class="json-str">"여민경"</span>,
+    <span class="json-key">"departmentName"</span>:<span class="json-str">"환경학및환경공학과"</span>,
+    <span class="json-key">"college"</span>:       <span class="json-str">"공과대학"</span>,
+    <span class="json-key">"isOnline"</span>:      <span class="json-bool">false</span>,
+    <span class="json-key">"scheduleText"</span>: <span class="json-str">"화 10:30-11:45\n목 10:30-11:45"</span>,
+    <span class="json-key">"schedules"</span>: [
+      {
+        <span class="json-key">"day"</span>:          <span class="json-str">"TUE"</span>,       <span style="color:#475569">// MON TUE WED THU FRI SAT SUN</span>
+        <span class="json-key">"startTime"</span>:   <span class="json-str">"10:30"</span>,
+        <span class="json-key">"endTime"</span>:     <span class="json-str">"11:45"</span>,
+        <span class="json-key">"startMinutes"</span>: <span class="json-num">630</span>,        <span style="color:#475569">// 자정 기준 분 (10×60+30=630)</span>
+        <span class="json-key">"endMinutes"</span>:   <span class="json-num">705</span>,
+        <span class="json-key">"classroom"</span>:   <span class="json-str">"공369호"</span>
+      },
+      {
+        <span class="json-key">"day"</span>: <span class="json-str">"THU"</span>, <span class="json-key">"startTime"</span>: <span class="json-str">"10:30"</span>, <span class="json-key">"endTime"</span>: <span class="json-str">"11:45"</span>,
+        <span class="json-key">"startMinutes"</span>: <span class="json-num">630</span>, <span class="json-key">"endMinutes"</span>: <span class="json-num">705</span>, <span class="json-key">"classroom"</span>: <span class="json-str">"공369호"</span>
+      }
+    ]
+  }
+]</pre>
+      <div class="callout info">💡 시간표 격자 Y좌표 계산: <strong>(startMinutes - 540) / 30</strong> → 09:00 기준 몇 번째 칸인지<br>예) 10:30 = 630분 → (630-540)/30 = 3번째 칸</div>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/courses/{courseId}</span>
+      <span class="ep-desc">강의 상세 조회</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Path Variable</div>
+      <table><tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+        <tr><td><code>courseId</code></td><td>Long</td><td>강의 ID</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TIMETABLE ══════════ -->
+<section class="section" id="timetable">
+  <div class="section-header">
+    <span class="section-icon">📅</span>
+    <h2>Timetable — 시간표</h2>
+    <span class="tag">/api/timetable</span>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge POST">POST</span>
+      <span class="ep-path">/api/timetable</span>
+      <span class="ep-desc">시간표에 강의 추가</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Request Body</div>
+      <table><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr>
+        <tr><td><code>courseId</code></td><td>Long</td><td><span class="req">필수</span></td><td>추가할 강의 ID</td></tr>
+      </table>
+      <div class="two-col">
+        <div><div class="col-label">Request</div><pre>{ <span class="json-key">"courseId"</span>: <span class="json-num">3</span> }</pre></div>
+        <div><div class="col-label">Response (TimetableEntryResponse)</div><pre>{
+  <span class="json-key">"entryId"</span>:       <span class="json-num">10</span>,
+  <span class="json-key">"courseId"</span>:      <span class="json-num">3</span>,
+  <span class="json-key">"courseCode"</span>:    <span class="json-str">"ENV398-00"</span>,
+  <span class="json-key">"courseName"</span>:   <span class="json-str">"ESG규제리스크관리"</span>,
+  <span class="json-key">"professorName"</span>: <span class="json-str">"여민경"</span>,
+  <span class="json-key">"scheduleText"</span>: <span class="json-str">"화 10:30-11:45"</span>,
+  <span class="json-key">"classroom"</span>:    <span class="json-str">"공369호"</span>,
+  <span class="json-key">"semesterYear"</span>:  <span class="json-num">2026</span>,
+  <span class="json-key">"semesterTerm"</span>: <span class="json-str">"FIRST"</span>
+}</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/timetable/me</span>
+      <span class="ep-desc">내 시간표 전체 조회</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre>[ TimetableEntryResponse, TimetableEntryResponse, ... ]  <span style="color:#475569">// 위와 동일한 구조의 배열</span></pre>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge DELETE">DELETE</span>
+      <span class="ep-path">/api/timetable/{entryId}</span>
+      <span class="ep-desc">시간표에서 강의 삭제</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Path Variable</div>
+      <table><tr><th>파라미터</th><th>타입</th><th>설명</th></tr>
+        <tr><td><code>entryId</code></td><td>Long</td><td>시간표 항목 ID (courseId 아님!)</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ COURSE CHAT ══════════ -->
+<section class="section" id="course-chat">
+  <div class="section-header">
+    <span class="section-icon">💬</span>
+    <h2>Course Chat — 강의 채팅</h2>
+    <span class="tag">/api/course-chat/rooms</span>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge POST">POST</span>
+      <span class="ep-path">/api/course-chat/rooms/enter</span>
+      <span class="ep-desc">채팅방 입장 (없으면 생성)</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Request Body</div>
+      <table><tr><th>필드</th><th>타입</th><th>필수</th><th>설명</th></tr>
+        <tr><td><code>courseId</code></td><td>Long</td><td><span class="req">필수</span></td><td>입장할 강의 ID</td></tr>
+        <tr><td><code>createIfAbsent</code></td><td>boolean</td><td><span class="req">필수</span></td><td>채팅방 없을 때 생성 여부</td></tr>
+      </table>
+      <div class="two-col">
+        <div><div class="col-label">Request</div><pre>{
+  <span class="json-key">"courseId"</span>:        <span class="json-num">3</span>,
+  <span class="json-key">"createIfAbsent"</span>: <span class="json-bool">true</span>
+}</pre></div>
+        <div><div class="col-label">Response (CourseChatRoomResponse)</div><pre>{
+  <span class="json-key">"roomId"</span>:             <span class="json-num">7</span>,
+  <span class="json-key">"courseId"</span>:           <span class="json-num">3</span>,
+  <span class="json-key">"courseName"</span>:        <span class="json-str">"ESG규제리스크관리"</span>,
+  <span class="json-key">"lastMessagePreview"</span>: <span class="json-str">"안녕하세요!"</span>,
+  <span class="json-key">"lastMessageTime"</span>:   <span class="json-str">"2026-04-02T14:30:00"</span>,
+  <span class="json-key">"unreadCount"</span>:       <span class="json-num">3</span>
+}</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/course-chat/rooms/me</span>
+      <span class="ep-desc">내가 참여 중인 채팅방 목록</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre>[ CourseChatRoomResponse, ... ]</pre>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/course-chat/rooms/{roomId}/messages</span>
+      <span class="ep-desc">채팅 메시지 히스토리 (커서 페이징)</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Query Parameters</div>
+      <table><tr><th>파라미터</th><th>타입</th><th>기본값</th><th>설명</th></tr>
+        <tr><td><code>beforeMessageId</code></td><td>Long</td><td><span class="opt">없음</span></td><td>이 ID 이전 메시지 조회 (스크롤 업)</td></tr>
+        <tr><td><code>size</code></td><td>int</td><td>20</td><td>조회 개수 (1~100)</td></tr>
+      </table>
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre>{
+  <span class="json-key">"content"</span>: [
+    {
+      <span class="json-key">"messageId"</span>:      <span class="json-num">55</span>,
+      <span class="json-key">"roomId"</span>:         <span class="json-num">7</span>,
+      <span class="json-key">"senderUserId"</span>:  <span class="json-num">1</span>,
+      <span class="json-key">"senderNickname"</span>:<span class="json-str">"김경희"</span>,
+      <span class="json-key">"content"</span>:       <span class="json-str">"과제 언제까지예요?"</span>,
+      <span class="json-key">"createdAt"</span>:     <span class="json-str">"2026-04-02T14:30:00"</span>
+    }
+  ],
+  <span class="json-key">"nextBeforeMessageId"</span>: <span class="json-num">50</span>,
+  <span class="json-key">"hasNext"</span>:             <span class="json-bool">true</span>
+}</pre>
+    </div>
+  </div>
+
+  <!-- WebSocket -->
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge WS">WS</span>
+      <span class="ep-path">STOMP — 실시간 메시지 송수신</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="ws-info">
+        <div class="ws-title">⚡ WebSocket STOMP 연결 정보</div>
+        <div class="ws-row"><span class="ws-label">CONNECT</span><code>ws://34.47.66.208.nip.io:8080/ws</code></div>
+        <div class="ws-row"><span class="ws-label">SUBSCRIBE</span><code>/sub/course-chat/rooms/{roomId}</code></div>
+        <div class="ws-row"><span class="ws-label">SEND</span><code>/pub/course-chat/rooms/{roomId}/messages</code></div>
+      </div>
+      <div class="two-col" style="margin-top:12px">
+        <div><div class="col-label">Send Payload</div><pre>{ <span class="json-key">"content"</span>: <span class="json-str">"안녕하세요!"</span> }</pre></div>
+        <div><div class="col-label">Received (구독 채널)</div><pre>{
+  <span class="json-key">"messageId"</span>:     <span class="json-num">56</span>,
+  <span class="json-key">"senderUserId"</span>: <span class="json-num">1</span>,
+  <span class="json-key">"senderNickname"</span>:<span class="json-str">"김경희"</span>,
+  <span class="json-key">"content"</span>:      <span class="json-str">"안녕하세요!"</span>,
+  <span class="json-key">"createdAt"</span>:    <span class="json-str">"2026-04-02T14:31:00"</span>
+}</pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ DIRECT CHAT ══════════ -->
+<section class="section" id="direct-chat">
+  <div class="section-header">
+    <span class="section-icon">✉️</span>
+    <h2>Direct Chat — 1:1 채팅</h2>
+    <span class="tag">/api/direct-chat/rooms</span>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/direct-chat/rooms/me</span>
+      <span class="ep-desc">내 1:1 채팅방 목록</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre>[
+  {
+    <span class="json-key">"roomId"</span>:            <span class="json-num">2</span>,
+    <span class="json-key">"opponentUserId"</span>:   <span class="json-num">5</span>,
+    <span class="json-key">"opponentNickname"</span>: <span class="json-str">"박민준"</span>,
+    <span class="json-key">"lastMessagePreview"</span>: <span class="json-str">"언제 만날까요?"</span>,
+    <span class="json-key">"lastMessageTime"</span>:  <span class="json-str">"2026-04-02T10:00:00"</span>
+  }
+]</pre>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/direct-chat/rooms/{roomId}/messages</span>
+      <span class="ep-desc">1:1 채팅 히스토리</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Query Parameters</div>
+      <table><tr><th>파라미터</th><th>타입</th><th>기본값</th><th>설명</th></tr>
+        <tr><td><code>beforeMessageId</code></td><td>Long</td><td><span class="opt">없음</span></td><td>커서 페이징</td></tr>
+        <tr><td><code>size</code></td><td>int</td><td>20</td><td>조회 개수</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge WS">WS</span>
+      <span class="ep-path">STOMP — 1:1 실시간 메시지</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="ws-info">
+        <div class="ws-title">⚡ WebSocket STOMP 연결 정보</div>
+        <div class="ws-row"><span class="ws-label">CONNECT</span><code>ws://34.47.66.208.nip.io:8080/ws</code></div>
+        <div class="ws-row"><span class="ws-label">SUBSCRIBE</span><code>/sub/direct-chat/rooms/{roomId}</code></div>
+        <div class="ws-row"><span class="ws-label">SEND</span><code>/pub/direct-chat/rooms/{roomId}/messages</code></div>
+      </div>
+      <div class="two-col" style="margin-top:12px">
+        <div><div class="col-label">Send Payload</div><pre>{ <span class="json-key">"content"</span>: <span class="json-str">"내일 오전 어때요?"</span> }</pre></div>
+        <div><div class="col-label">Received (구독 채널)</div><pre>{
+  <span class="json-key">"messageId"</span>:     <span class="json-num">99</span>,
+  <span class="json-key">"senderUserId"</span>: <span class="json-num">1</span>,
+  <span class="json-key">"senderNickname"</span>:<span class="json-str">"김경희"</span>,
+  <span class="json-key">"content"</span>:      <span class="json-str">"내일 오전 어때요?"</span>,
+  <span class="json-key">"createdAt"</span>:    <span class="json-str">"2026-04-02T15:00:00"</span>
+}</pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ MATCH POST ══════════ -->
+<section class="section" id="match">
+  <div class="section-header">
+    <span class="section-icon">🤝</span>
+    <h2>Match Post — 매칭 게시글</h2>
+    <span class="tag">/api/match-posts</span>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge POST">POST</span>
+      <span class="ep-path">/api/match-posts</span>
+      <span class="ep-desc">매칭 게시글 작성</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Request Body</div>
+      <table><tr><th>필드</th><th>타입</th><th>필수</th><th>조건</th></tr>
+        <tr><td><code>preferredTimeText</code></td><td>String</td><td><span class="req">필수</span></td><td>최대 100자 (예: "평일 오후")</td></tr>
+        <tr><td><code>locationText</code></td><td>String</td><td><span class="req">필수</span></td><td>최대 100자 (예: "중앙도서관")</td></tr>
+        <tr><td><code>content</code></td><td>String</td><td><span class="req">필수</span></td><td>최대 1000자</td></tr>
+        <tr><td><code>category</code></td><td>String</td><td><span class="opt">선택</span></td><td>최대 30자 (예: "스터디")</td></tr>
+      </table>
+      <div class="two-col">
+        <div><div class="col-label">Request</div><pre>{
+  <span class="json-key">"preferredTimeText"</span>: <span class="json-str">"평일 오후 2시"</span>,
+  <span class="json-key">"locationText"</span>:     <span class="json-str">"중앙도서관 3층"</span>,
+  <span class="json-key">"content"</span>:          <span class="json-str">"알고리즘 같이 공부해요"</span>,
+  <span class="json-key">"category"</span>:         <span class="json-str">"스터디"</span>
+}</pre></div>
+        <div><div class="col-label">Response (MatchPostResponse)</div><pre>{
+  <span class="json-key">"id"</span>:               <span class="json-num">42</span>,
+  <span class="json-key">"authorUserId"</span>:    <span class="json-num">1</span>,
+  <span class="json-key">"authorNickname"</span>:  <span class="json-str">"김경희"</span>,
+  <span class="json-key">"preferredTimeText"</span>:<span class="json-str">"평일 오후 2시"</span>,
+  <span class="json-key">"locationText"</span>:    <span class="json-str">"중앙도서관 3층"</span>,
+  <span class="json-key">"content"</span>:         <span class="json-str">"알고리즘 같이 공부해요"</span>,
+  <span class="json-key">"category"</span>:        <span class="json-str">"스터디"</span>,
+  <span class="json-key">"status"</span>:          <span class="json-str">"OPEN"</span>,
+  <span class="json-key">"acceptedByUserId"</span>: <span class="json-null">null</span>,
+  <span class="json-key">"acceptedAt"</span>:      <span class="json-null">null</span>,
+  <span class="json-key">"createdAt"</span>:       <span class="json-str">"2026-04-02T12:00:00"</span>
+}</pre></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge GET">GET</span>
+      <span class="ep-path">/api/match-posts</span>
+      <span class="ep-desc">매칭 게시글 목록</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="params-label">Query Parameters</div>
+      <table><tr><th>파라미터</th><th>타입</th><th>기본값</th><th>설명</th></tr>
+        <tr><td><code>status</code></td><td>String</td><td><span class="opt">없음</span></td><td><code>OPEN</code> / <code>MATCHED</code> / <code>CLOSED</code></td></tr>
+        <tr><td><code>page</code></td><td>int</td><td>0</td><td>페이지 번호</td></tr>
+        <tr><td><code>size</code></td><td>int</td><td>10</td><td>페이지 크기</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge PATCH">PATCH</span>
+      <span class="ep-path">/api/match-posts/{id}</span>
+      <span class="ep-desc">게시글 수정</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="callout info">작성자 본인만 수정 가능. Request Body는 POST와 동일.</div>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge DELETE">DELETE</span>
+      <span class="ep-path">/api/match-posts/{id}</span>
+      <span class="ep-desc">게시글 삭제</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="callout info">작성자 본인만 삭제 가능.</div>
+    </div>
+  </div>
+
+  <div class="ep-card">
+    <div class="ep-header" onclick="toggle(this)">
+      <span class="badge POST">POST</span>
+      <span class="ep-path">/api/match-posts/{id}/accept</span>
+      <span class="ep-desc">매칭 수락 → 1:1 채팅방 자동 생성</span>
+      <span class="auth-required">🔑 Auth</span>
+      <span class="toggle-arrow">▾</span>
+    </div>
+    <div class="ep-body">
+      <div class="col-label" style="margin-top:12px">Response</div>
+      <pre>{
+  <span class="json-key">"matchPostId"</span>:  <span class="json-num">42</span>,
+  <span class="json-key">"status"</span>:       <span class="json-str">"MATCHED"</span>,
+  <span class="json-key">"directRoomId"</span>: <span class="json-num">2</span>   <span style="color:#475569">// 생성된 1:1 채팅방 ID → 바로 채팅으로 이동</span>
+}</pre>
+      <div class="callout info">💡 수락 즉시 작성자↔수락자 간 1:1 채팅방이 생성됩니다. <code>directRoomId</code>로 바로 채팅 화면으로 이동하세요.</div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+function toggle(header) {
+  const body = header.nextElementSibling;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  header.classList.toggle('active', !isOpen);
+}
+// 기본으로 첫 번째 카드들 열어두기
+document.querySelectorAll('.ep-card:first-of-type .ep-header').forEach(h => toggle(h));
+</script>
+</body>
+</html>

@@ -17,7 +17,7 @@ npm run build
 
 ## 기본 정보
 
-- Backend base URL: `http://localhost:8080`
+- Backend base URL: `http://34.47.66.208:8080`
 - Frontend dev URL: `http://localhost:5173`
 - OAuth callback 처리: `/auth/callback?code=...` 또는 현재 URL query의 `code` 자동 인식
 

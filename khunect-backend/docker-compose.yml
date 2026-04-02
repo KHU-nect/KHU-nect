@@ -34,6 +34,7 @@ services:
       GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:8080/login/oauth2/code/google}
       FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:5173}
       AUTH_CALLBACK_PATH: ${AUTH_CALLBACK_PATH:-/auth/callback}
+      ALLOWED_EMAIL_DOMAIN: ${ALLOWED_EMAIL_DOMAIN:-khu.ac.kr}
 
 volumes:
   postgres-data:

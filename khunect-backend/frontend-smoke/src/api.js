@@ -1,4 +1,4 @@
-const DEFAULT_BASE_URL = "http://localhost:8080";
+const DEFAULT_BASE_URL = "http://34.47.66.208.nip.io:8080";
 const BASE_URL_KEY = "khunect.baseUrl";
 const ACCESS_TOKEN_KEY = "khunect.accessToken";
 const REFRESH_TOKEN_KEY = "khunect.refreshToken";
