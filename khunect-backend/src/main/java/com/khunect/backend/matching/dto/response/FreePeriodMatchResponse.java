@@ -5,6 +5,7 @@ import java.util.List;
 public record FreePeriodMatchResponse(
 	Long userId,
 	String nickname,
+	String major,
 	List<InterestSummary> interests,
 	String bio,
 	String todayQuestion,

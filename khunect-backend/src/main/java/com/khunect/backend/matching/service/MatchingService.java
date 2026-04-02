@@ -76,6 +76,7 @@ public class MatchingService {
 			result.add(new FreePeriodMatchResponse(
 				candidate.getId(),
 				candidate.getNickname(),
+				candidate.getMajor(),
 				toInterestSummaries(candidate.getId()),
 				candidate.getBio(),
 				candidate.getTodayQuestion(),
