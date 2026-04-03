@@ -5,16 +5,17 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: techuser
-      POSTGRES_PASSWORD: techpassword
-      POSTGRES_DB: techblog_db
+      POSTGRES_USER: ${DB_USERNAME:-techuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-techpassword}
+      POSTGRES_DB: ${DB_NAME:-techblog_db}
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U techuser -d techblog_db" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME:-techuser} -d ${DB_NAME:-techblog_db}" ]
       interval: 10s
       timeout: 5s
       retries: 5
     volumes:
       - postgres-data:/var/lib/postgresql/data
+
   backend:
     build: .
     container_name: khunect-backend
@@ -22,12 +23,12 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: local
-      DB_URL: jdbc:postgresql://db:5432/techblog_db
-      DB_USERNAME: techuser
-      DB_PASSWORD: techpassword
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-techblog_db}
+      DB_USERNAME: ${DB_USERNAME:-techuser}
+      DB_PASSWORD: ${DB_PASSWORD:-techpassword}
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-secure-key-with-at-least-32-characters}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-your-google-client-id}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-your-google-client-secret}
